@@ -52,7 +52,7 @@ jobs:
         run: |
           DAY_OF_MONTH=$(date -u +%d)
 
-          if [ "$DAY_OF_MONTH" = "01" ]; then
+          if [ "$DAY_OF_MONTH" = "01" ] || [ ! -f .gridiron-heartbeat ]; then
             date -u +"%Y-%m-%dT%H:%M:%SZ" > .gridiron-heartbeat
           fi
 

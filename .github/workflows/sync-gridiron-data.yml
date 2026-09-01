@@ -1,0 +1,64 @@
+name: Sync Gridiron Dynasty Data
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: "17 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create data directory
+        run: mkdir -p data
+
+      - name: Download salaries
+        run: |
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --location \
+            "https://gridiron-dynasty.de/api/salaries.php" \
+            --output salaries.tmp.json
+
+          python -m json.tool salaries.tmp.json > /dev/null
+
+          mv salaries.tmp.json data/salaries.json
+
+      - name: Download dead cap
+        run: |
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --location \
+            "https://gridiron-dynasty.de/api/deadcap.php" \
+            --output deadcap.tmp.json
+
+          python -m json.tool deadcap.tmp.json > /dev/null
+
+          mv deadcap.tmp.json data/deadcap.json
+
+      - name: Commit changes
+        run: |
+          git config user.name "gridiron-data-bot"
+          git config user.email "gridiron-data-bot@users.noreply.github.com"
+
+          git add data/salaries.json data/deadcap.json
+
+          if git diff --cached --quiet; then
+            echo "Keine Änderungen."
+            exit 0
+          fi
+
+          git commit -m "Update Gridiron Dynasty data"
+          git push
